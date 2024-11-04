@@ -1,0 +1,57 @@
+rm(list=ls())
+
+library(ggvenn)
+library(RColorBrewer)
+library(ggVennDiagram)
+df<-read.delim('Fig.2-Bacteria-veen.txt',header = T,row.names = 1,check.names=F)
+group<-read.delim('group.txt',header = T)
+colnames(group)<-c('sample','group')
+outord<-group$group[!duplicated(group$group)]
+df<-df[,group$sample]
+colnames(df)<-group$group
+df1<-as.data.frame(t(apply(df, 1, function(x) tapply(x, colnames(df), mean))))
+df1<-df1[,outord,drop=F]
+df2<-cbind(c(rownames(df1)),df1)
+colnames(df2)[1]<-'tax'
+write.table(df2,'step22.merge_for_venn.txt',row.names = F,sep = '\t',quote = F)
+
+###
+data<-read.delim("step22.merge_for_venn.txt",header = T)
+
+# 
+colnames(data)[1]<-'tax'
+
+data[,-1]<-lapply(data[,-1],function(x) ifelse(x>0,1,NA))
+setlist<- lapply(data[ -1 ], function(i) unique(data$tax[ !is.na(i) ]))
+
+mycol<-c('#72AACF','#FDB96B','#EC5D3B')
+
+
+library(VennDiagram)
+
+# Helper function to display Venn diagram
+display_venn <- function(x, ...){
+  library(VennDiagram)
+  grid.newpage()
+  venn_object <- venn.diagram(x, filename = NULL, ...)
+  grid.draw(venn_object)
+}
+
+
+
+pdf('step22.venn-bac.pdf',height = 8,width = 8)
+display_venn(setlist,
+             lwd = 2,
+             # fill = c("#999999", "#E69F00", "#56B4E9", "#009E73"),
+             # Numbers
+             cex = .9,
+             alpha = 0.25,
+             # Set names
+             cat.cex = 1,
+             cat.fontface = "bold",
+             cat.default.pos = "outer",
+             cat.col =  mycol,
+             fill = mycol,
+             col=mycol)
+
+dev.off()

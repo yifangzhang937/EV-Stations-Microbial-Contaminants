@@ -1,0 +1,90 @@
+
+rm(list = ls()) 
+# Read in data
+df <- read.delim('Fig.3-HPBs-lm.txt', sep = '\t', row.names = 1, check.names = FALSE)
+
+# Simple one-time linear regression fit
+fit <- lm(value ~ longitude, data = df)
+
+
+library(ggplot2)
+
+p <- ggplot(data = df, aes(x = longitude, y = value, color = AMT)) +
+  geom_point(size = 4, shape = 19) +
+  xlab("longitude (°E)") +
+  ylab("Relative abundance (%)") +
+  scale_color_gradientn(colors = c("#4472C4", "#ffe7e7", "#FF0000"),
+                        values = c(0, 0.5, 1),
+                        aesthetic = "colour") +
+  geom_smooth(method = "lm", se = TRUE, fill="grey", alpha=0.4) + 
+  
+  theme(panel.border = element_rect(fill = NA, color = "black", size = 2), 
+        panel.background = element_rect(fill = "white"), 
+        axis.title.x = element_text(size = 18), 
+        axis.title.y = element_text(size = 18), 
+        axis.text.x = element_text(size = 16), 
+        axis.text.y = element_text(size = 16)) 
+
+# The important statistical values in the above results were extracted 
+#and used to mark the equation in the figure
+label_fit <- data.frame(
+  formula = sprintf('italic(Y) == %.7f*italic(X) + %.3f', coefficients(fit)[2], coefficients(fit)[1]),
+  R2 = sprintf('italic(R^2) == %.3f', summary(fit)$r.squared),
+  p_value = sprintf('italic(P) < %.3f', summary(fit)$coefficients["longitude", "Pr(>|t|)"]))
+
+p +
+  geom_text(x = 125, y = 0.3, aes(label = R2), data = label_fit, parse = TRUE,
+            hjust = 0, color = 'black', show.legend = FALSE, size = 4) +
+  geom_text(x = 125, y = 0.25, aes(label = p_value), data = label_fit, parse = TRUE,
+            hjust = 0, color = 'black', show.legend = FALSE, size = 4)
+
+ggsave("HPBs-OLS.pdf",width = 5,height = 5)
+
+
+
+
+
+
+rm(list = ls()) 
+# Read in data
+df <- read.delim('Fig.3-HPBs-lm.txt', sep = '\t', row.names = 1, check.names = FALSE)
+
+# A second-order polynomial model was constructed
+fit <- lm(value ~ poly(latitude, 2), data = df)
+
+
+library(ggplot2)
+
+p <- ggplot(data = df, aes(x = latitude, y = value, color = AMT)) +
+  geom_point(size = 4, shape = 19) + # Scatter plots were drawn and colored according to AMT
+  xlab("Latitude (°N)") +
+  ylab("Relative abundance (%)") +
+  scale_color_gradientn(colors = c("#4472C4", "#ffe7e7", "#FF0000"),
+                        values = c(0, 0.5, 1),
+                        aesthetic = "colour") +
+  # 由于模型不显著，故取消拟合线
+  geom_smooth(method = "lm", formula = y ~ poly(x, 2), se = TRUE, fill="grey", alpha=0.4) + 
+  
+  theme(panel.border = element_rect(fill = NA, color = "black", size = 2), 
+        panel.background = element_rect(fill = "white"), 
+        axis.title.x = element_text(size = 18), 
+        axis.title.y = element_text(size = 18), 
+        axis.text.x = element_text(size = 16), 
+        axis.text.y = element_text(size = 16)) 
+
+# The important statistical values in the above results were extracted 
+#and used to mark the equation in the figure
+label_fit <- data.frame(
+  formula = sprintf('italic(Y) == %.7f*italic(X^2) + %.7f*italic(X) + %.3f', coefficients(fit)[3], coefficients(fit)[2], coefficients(fit)[1]),
+  R2 = sprintf('italic(R^2) == %.3f', summary(fit)$r.squared),
+  p_value = sprintf('italic(P) < %.3f', summary(fit)$coefficients["poly(latitude, 2)2", "Pr(>|t|)"]))
+
+p +
+  #geom_text(x = 40, y = 80, aes(label = formula), data = label_fit, parse = TRUE,
+  #hjust = 0, color = 'black', show.legend = FALSE, size = 4) +
+  geom_text(x = 40, y = 0.3, aes(label = R2), data = label_fit, parse = TRUE,
+            hjust = 0, color = 'black', show.legend = FALSE, size = 4) +
+  geom_text(x = 40, y = 0.25, aes(label = p_value), data = label_fit, parse = TRUE,
+            hjust = 0, color = 'black', show.legend = FALSE, size = 4)
+
+ggsave("HPBs-OLS.pdf",width = 5,height = 5)

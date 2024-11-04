@@ -1,0 +1,77 @@
+
+rm(list = ls())
+library(vegan)
+library(ggplot2)
+library(ggrepel)
+library(dplyr)
+rm(list=ls())
+Import environmental factor files, OTU tables, and grouping files
+env<-read.delim("Fig.5-env.txt",header = T,row.names = 1)
+env<-t(env)
+genus<-read.delim("Fig.5-core HPBs.txt",header = T,row.names = 1)
+mygroup<-read.delim('group.txt',header = T,stringsAsFactors = F)
+
+#mygroup$group<-factor(mygroup$group,levels = mygroup$group[!duplicated(mygroup$group)])
+mygroup$group = factor(mygroup$group,
+                       levels = c('Low_latitudes','Mid_latitudes','High_latitudes'))
+
+colnames(mygroup)<-c('sample','group')
+genus<-genus[,mygroup$sample]
+
+env<-env[mygroup$sample,]
+
+genus1 <- scale(genus,center=F,scale=T)
+env <- as.data.frame(scale(env,center=F,scale=T))
+
+
+#spp=t(decostand(sp,method = "hellinger"))#Convert response variables
+spp<-t(genus1)
+#envc=log10(env)#Converting explanatory variables
+decorana1<-decorana(spp)
+decorana1
+##
+#Axis lengths 
+#more than 3.5 using CCA, otherwise RDA
+
+
+#Whether to use CCA or RDA was confirmed according to the above results
+rm(list=ls())
+library(rdacca.hp)
+library(vegan)
+
+# Import environmental factors and keystone species data
+ENV1<-read.delim('Fig.5-env.txt',header = T,row.names = 1)
+ENV1<-t(ENV1)
+genus<-read.delim('Fig.5-core HPBs.txt',header = T,row.names = 1,check.names = F)
+genus<-genus[rowSums(genus)>0,colSums(genus)>0]
+
+
+genus<-as.data.frame(t(genus))
+
+#Different from RDA, species abundance in CCA is generally not treated with Hellinger transformation,
+#and the original abundance matrix can be directly used
+
+mite.hel <- decostand(genus, "hellinger")
+
+
+avc<-rdacca.hp(mite.hel,ENV1,method="RDA",
+               type="R2",
+               n.perm = 1000)
+eacheffect<-as.data.frame(avc$Hier.part)
+
+
+# Or maybe it's
+avc<-rdacca.hp(genus,ENV1,method="CCA",
+               type="R2",
+               n.perm = 1000)
+eacheffect<-as.data.frame(avc$Hier.part)
+
+
+plot(avc)
+sum(eacheffect$Individual)
+sum(eacheffect$`I.perc(%)`)
+
+#ggsave('test1_each.pdf',width = 6,height = 4)
+plot(avc, plot.perc=TRUE)
+
+write.table(cbind(env=rownames(eacheffect),eacheffect),'HPBs-each_fact.txt',row.names = F,sep = '\t',quote = F)

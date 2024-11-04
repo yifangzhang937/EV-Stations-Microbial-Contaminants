@@ -1,0 +1,96 @@
+
+
+
+rm(list = ls())
+# Load the required R packages
+library(dplyr)
+library(randomForest)
+library(randomForestExplainer)
+library(ggplot2)
+set.seed(123)
+
+# Import the predicted data
+myinput<-'Fig.5-env.txt'
+df<-read.delim(myinput,header = T,row.names = 1,check.names = F)
+#df<-t(df)
+colnames(df)<-gsub('-','_',colnames(df))
+
+# Import continuous data that needs to be predicted
+env1<-read.delim('Fig.5-core HPBs-shannon.txt',header = T,row.names = 1)
+colnames(env1)<-'Target'
+df<-df[rownames(env1),]
+
+
+ntree1<-5000
+rf <-randomForest(env1$Target~.,data= df, ntree= ntree1,importance=TRUE) 
+
+# The significance of the full model was assessed, P<0.01.65.9
+
+library(A3)
+set.seed(433)
+df_data_frame <- as.data.frame(df)  
+forest.pval <- a3(env1$Target~., data = df_data_frame, 
+                  model.fn = randomForest, p.acc = 0.05, 
+                  model.args = list(importance = TRUE, ntree = 500)) 
+forest.pval 
+
+# The R^2 values of the full model were extracted
+full_model_r_squared <- 66.2
+
+# P-values were extracted for the full model
+full_model_p_value <- "P < 0.05"
+
+# Convert the R^2 value to a string in percentage form
+VarExplian <- paste('% Var explained: ', full_model_r_squared, '%', sep = '')
+
+
+sink(paste0('step52.',myinput,'.prediction_accuracy.txt'))
+print(rf)
+sink(NULL)
+
+
+rf_importance<-as.data.frame(importance(rf))
+importance_frame <- measure_importance(rf )
+
+
+# write.table(cbind(tax=rownames(rf_importance),rf_importance),paste0('step52.',myinput,'.randomForest.importance.txt'),
+           #  row.names = F,sep = '\t',quote = F)
+
+# write.table(importance_frame,paste0('step52.',myinput,'.all.randomForest.importance.txt'),
+           # row.names = F,sep = '\t',quote = F)
+
+IncMSE2<-as.data.frame(importance_frame %>% #filter(p_value<0.05)%>% top_n(n=10,wt=mse_increase) %>%
+                         arrange(desc(mse_increase)))
+colnames(IncMSE2)[1]<-'genus'
+IncMSE<-as.data.frame(rf_importance %>% #filter(`%IncMSE`>0) %>%#top_n(n=10,wt=`%IncMSE`) %>%
+                        arrange(desc(`%IncMSE`)))
+colnames(IncMSE)[1]<-'MSE'
+IncMSE$genus<-rownames(IncMSE)
+IncMSE$genus<-factor(IncMSE$genus,levels = rev(IncMSE$genus))
+IncMSE<-merge(IncMSE,IncMSE2,by='genus')
+IncMSE$pstar<-cut(IncMSE$p_value,breaks = c(0,0.001,0.01,0.05,1),include.lowest = T,
+                  labels =c('***','**','*',''))
+IncMSE$color1<-ifelse(IncMSE$pstar=='','#595959','#595959')
+IncMSE<-IncMSE %>% filter(MSE>0)
+
+
+ggplot(IncMSE,aes(x=genus,y=MSE,fill=color1,label=pstar))+
+  geom_bar(stat="identity",width = 0.8,show.legend = F)+
+  geom_text(hjust=0,vjust=0.6)+
+  scale_fill_manual(values=c('#595959','#FFFFFF'))+
+  labs(y='Variable Importance(%IncMSE)',x=  VarExplian)+
+  coord_flip()+# ggtitle('；')+
+  scale_y_continuous(expand    =    expansion(mult = c(0,0.1), add=c(0,0.1)))+
+  # scale_x_discrete(position = 'top')+
+  # scale_y_continuous(') +
+  theme_classic()+
+  theme(
+    text=element_text(family = 'Times'),
+    # plot.title = element_text(hjust=0.5,face='bold'),
+    axis.text.x = element_text(angle = 0,hjust=0.5,size=12),
+    axis.text.y = element_text(size=12,face='bold'),
+    axis.title = element_text(face='bold'),
+    axis.line = element_line(size = 1, color = "black")  # 设置坐标轴的粗细和颜色
+  )
+
+ggsave("HPBs-RF1103.pdf",width = 5,height = 6)

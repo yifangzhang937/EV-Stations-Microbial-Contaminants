@@ -1,0 +1,7 @@
+ID	abundance(%)					
+Beauveria_bassiana	1.5033179					
+Blumeria_graminis	1.2881271					
+Penicillium_digitatum	0.0733595					
+						
+						
+						

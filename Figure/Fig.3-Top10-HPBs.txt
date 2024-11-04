@@ -1,0 +1,11 @@
+ID	abundance(%)
+Pseudomonas_putida_GB-1_NC_010322_1	22.45027666
+Streptococcus_gallolyticus_strain_ATCC_BAA-2069__NC_015215_1	15.61612083
+Bacillus_megaterium_QM_B1551_NC_014019_1	9.290414237
+Corynebacterium_glutamicum_R_NC_009342_1	8.20061313
+Staphylococcuss_aprophyticus_L37596_1	6.262150441
+Klebsiella_pneumoniae_subsp__pneumoniae_1084_NC_018522	5.239644086
+Pseudomonas_fluorescens?SBW25_NC_012660	3.622700763
+Clostridium_difficile_CD196__NC_013315_1	3.003962913
+Klebsiella_pneumoniae_KCTC_2242_NC_017540	2.917975176
+Bacillus_thuringiensis_BMB171_NC_014171_1	2.740391805
